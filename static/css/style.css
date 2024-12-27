@@ -22,13 +22,20 @@ canvas {
 .controls {
     position: fixed;
     bottom: 20px;
-    left: 0;
-    right: 0;
+    right: 20px;
     z-index: 2;
     padding: 20px;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 1;
+}
+
+.controls.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .card {
     background-color: rgba(33, 37, 41, 0.85) !important;
     backdrop-filter: blur(10px);
+    width: 300px;
 }
