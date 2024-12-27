@@ -74,10 +74,18 @@ const fragmentShaderSource = `
         float highlight = pow(metaballValue, 6.0);
         finalColor += reflectionColor * highlight * 0.7;
 
-        // 色の強度を調整
-        finalColor = mix(vec3(0.5), finalColor, uColorIntensity);
+        // 金属的な質感とColor Intensityの連動
+        vec3 baseColor = mix(metalColor2, finalColor, uColorIntensity);
+        float metallic = mix(0.5, 1.0, uColorIntensity);
+
+        // 最終的な色を計算（金属感を強調）
+        finalColor = mix(baseColor, finalColor * metallic, threshold);
+
+        // 青みがかった反射を追加
+        float blueReflection = sin(uv.x * 15.0 + t) * sin(uv.y * 15.0 - t) * 0.5 + 0.5;
+        finalColor += vec3(0.2, 0.3, 0.4) * blueReflection * threshold * uColorIntensity;
 
         // 最終的な色を出力（アルファ値は不透明）
-        gl_FragColor = vec4(finalColor * threshold, 1.0);
+        gl_FragColor = vec4(finalColor, 1.0);
     }
 `;
