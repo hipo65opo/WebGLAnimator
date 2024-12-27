@@ -19,6 +19,8 @@ const fragmentShaderSource = `
     uniform float uSpeed;
     uniform float uColorIntensity;
 
+    #define pi 3.141592653589793
+
     // メタボールの影響を計算する関数
     float metaball(vec2 p, vec2 center, float radius) {
         float r = length(p - center);
@@ -36,12 +38,17 @@ const fragmentShaderSource = `
     }
 
     void main() {
-        vec2 uv = vTextureCoord;
-        float t = uTime * uSpeed;
-
-        // より大きな波のような動きを生成
-        float wave = sin(uv.x * 3.0 + t) * cos(uv.y * 2.0 - t * 1.5) * 0.1;
-        uv += wave;
+        float T = uTime * uSpeed * 1.9;
+        float TT = uTime * uSpeed * 0.6;
+        vec2 p = (2.0 * vTextureCoord - 1.0);
+        
+        for(int i=1; i<11; i++) {
+            vec2 newp = p;
+            float ii = float(i);
+            newp.x += 0.85/ii * sin(ii*pi*p.y + T*0.095 + cos((TT/(5.0*ii))*ii));
+            newp.y += 0.25/ii * cos(ii*pi*p.x + TT + 0.095 + sin((T/(5.0*ii))*ii));
+            p = newp;
+        }
 
         // メタボールの中心位置を計算（より大きな動き）
         vec2 center1 = vec2(0.5 + 0.3 * sin(t * 0.4), 0.5 + 0.3 * cos(t * 0.5));
@@ -60,41 +67,11 @@ const fragmentShaderSource = `
         // メタボールの形状を定義（よりスムーズな変化）
         float threshold = smoothstep(1.0, 2.5, metaballValue);
 
-        // 金属的な色の定義
-        vec3 metalColor1 = vec3(0.9, 0.95, 1.0);    // より明るい青白い金属色
-        vec3 metalColor2 = vec3(0.6, 0.7, 0.9);     // より深い青みの金属色
-        vec3 reflectionColor = vec3(0.98, 0.99, 1.0); // 純白に近い反射色
-
-        // フレネル効果の計算（より強い効果）
-        float fresnel = fresnel(threshold, 4.0);
-
-        // 動的な環境光の反射を計算
-        float envReflection = 
-            sin(uv.x * 8.0 + t) * sin(uv.y * 8.0 + t * 0.7) * 0.5 +
-            cos(uv.x * 6.0 - t * 0.5) * cos(uv.y * 6.0 + t * 0.6) * 0.3 +
-            sin(uv.x * 4.0 + t * 0.3) * sin(uv.y * 4.0 - t * 0.4) * 0.2;
-        envReflection = pow(envReflection * 0.5 + 0.5, 2.0);
-
-        // ノイズパターンを追加して細かな質感を表現
-        float noisePattern = noise(uv * 10.0 + t * 0.1) * 0.1;
-
-        // 金属的な質感の合成
-        vec3 baseColor = mix(metalColor2, metalColor1, threshold + noisePattern);
-        vec3 finalColor = mix(baseColor, reflectionColor, fresnel * envReflection);
-
-        // Color Intensityによる金属感の調整
-        float metallic = mix(0.6, 1.2, uColorIntensity);
-        finalColor *= metallic;
-
-        // 動的なハイライトの追加
-        float highlight = pow(metaballValue, 3.0) * (1.0 + sin(t) * 0.2);
-        finalColor += reflectionColor * highlight * uColorIntensity;
-
-        // 青みがかった反射の動的な追加
-        float blueReflection = sin(uv.x * 12.0 + t) * sin(uv.y * 12.0 - t * 0.8) * 0.5 + 0.5;
-        finalColor += vec3(0.2, 0.4, 0.6) * blueReflection * threshold * uColorIntensity;
-
-        // 最終的な色を出力
-        gl_FragColor = vec4(finalColor, 1.0);
+        vec3 col = vec3(
+            cos(p.x + p.y + 3.0 * 0.45) * 0.5 + 0.5,
+            sin(p.x + p.y + 6.0 * 1.33) * 0.5 + 0.5,
+            (sin(p.x + p.y + 9.0 * 1.0) + cos(p.x + p.y + 12.0 * 0.22)) * 0.25 + 0.5
+        );
+        gl_FragColor = vec4(col * col * uColorIntensity, 1.0);
     }
 `;
