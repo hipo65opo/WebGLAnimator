@@ -50,22 +50,7 @@ const fragmentShaderSource = `
             p = newp;
         }
 
-        // メタボールの中心位置を計算（より大きな動き）
-        vec2 center1 = vec2(0.5 + 0.3 * sin(t * 0.4), 0.5 + 0.3 * cos(t * 0.5));
-        vec2 center2 = vec2(0.5 + 0.35 * cos(t * 0.3), 0.5 + 0.35 * sin(t * 0.6));
-        vec2 center3 = vec2(0.5 + 0.25 * sin(t * 0.7), 0.5 + 0.25 * cos(t * 0.4));
-        vec2 center4 = vec2(0.5 + 0.4 * cos(t * 0.2), 0.5 + 0.4 * sin(t * 0.3));
-
-        // メタボールの合成値を計算（より強い影響）
-        float m1 = metaball(uv, center1, 0.15);
-        float m2 = metaball(uv, center2, 0.12);
-        float m3 = metaball(uv, center3, 0.14);
-        float m4 = metaball(uv, center4, 0.13);
-
-        float metaballValue = m1 + m2 + m3 + m4;
-
-        // メタボールの形状を定義（よりスムーズな変化）
-        float threshold = smoothstep(1.0, 2.5, metaballValue);
+        
 
         vec3 col = vec3(
             cos(p.x + p.y + 3.0 * 0.45) * 0.5 + 0.5,
