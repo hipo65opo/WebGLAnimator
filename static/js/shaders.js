@@ -1,65 +1,67 @@
 // 頂点シェーダー：頂点の位置と質感座標を処理
 const vertexShaderSource = `
-    // 頂点位置情報を受け取る
     attribute vec4 aVertexPosition;
-    // テクスチャ座標を受け取る
     attribute vec2 aTextureCoord;
-    
-    // フラグメントシェーダーに渡すテクスチャ座標
     varying vec2 vTextureCoord;
-    
+
     void main() {
-        // 頂点位置をそのまま出力
         gl_Position = aVertexPosition;
-        // テクスチャ座標をフラグメントシェーダーに渡す
         vTextureCoord = aTextureCoord;
     }
 `;
 
-// フラグメントシェーダー：各ピクセルの色を計算
+// フラグメントシェーダー：メタボールエフェクトを実装
 const fragmentShaderSource = `
-    // 高精度の浮動小数点を使用
     precision highp float;
-    
-    // 頂点シェーダーから受け取るテクスチャ座標
+
     varying vec2 vTextureCoord;
-    
-    // アニメーションの時間
     uniform float uTime;
-    // アニメーションの速度
-    uniform float uSpeed; 
-    // 色の強度を制御
+    uniform float uSpeed;
     uniform float uColorIntensity;
-    
+
+    // メタボールの影響を計算する関数
+    float metaball(vec2 p, vec2 center, float radius) {
+        float r = length(p - center);
+        return radius / r;
+    }
+
     void main() {
-        // テクスチャ座標を取得
         vec2 uv = vTextureCoord;
-        // 時間に基づくアニメーション値
         float t = uTime * uSpeed;
-        
-        // 水銀のような流体効果を作成
-        // 正弦波と余弦波を組み合わせて複雑な波パターンを生成
-        float fluid = sin(uv.x * 4.0 + sin(uv.y * 3.0 + t)) * 
-                     cos(uv.y * 4.0 + cos(uv.x * 3.0 + t * 0.7));
-                     
-        // 中心からの距離に基づいて円形のうねり効果を追加
-        fluid += sin(length(uv - 0.5) * 8.0 - t * 1.5) * 0.3;
-        
-        // 水銀の色の定義
-        vec3 mercuryBase = vec3(0.8, 0.8, 0.83);      // 基本色
-        vec3 mercuryHighlight = vec3(1.0, 1.0, 1.0);  // ハイライト
-        vec3 mercuryShadow = vec3(0.6, 0.6, 0.65);    // 影の色
-        
-        // 流体パターンに基づいて3つの色を補間
-        // fluid値を0-1の範囲に変換して色を混ぜる
-        vec3 color = mix(mercuryShadow, 
-                        mix(mercuryBase, mercuryHighlight, fluid * 0.5 + 0.5),
-                        fluid * 0.5 + 0.5);
-        
-        // 全体的な色の強度を調整
-        color = mix(vec3(0.7), color, uColorIntensity);
-        
-        // 最終的な色を設定（アルファ値は1.0で完全に不透明）
-        gl_FragColor = vec4(color, 1.0);
+
+        // 4つのメタボールの中心位置を計算
+        vec2 center1 = vec2(0.5 + 0.2 * cos(t * 0.5), 0.5 + 0.2 * sin(t * 0.7));
+        vec2 center2 = vec2(0.5 + 0.2 * cos(t * 0.8 + 2.0), 0.5 + 0.2 * sin(t * 0.6 + 1.0));
+        vec2 center3 = vec2(0.5 + 0.2 * sin(t * 0.7 + 4.0), 0.5 + 0.2 * cos(t * 0.9 + 3.0));
+        vec2 center4 = vec2(0.5 + 0.15 * sin(t * 0.5 + 1.5), 0.5 + 0.15 * cos(t * 0.8 + 2.5));
+
+        // メタボールの合成値を計算
+        float m1 = metaball(uv, center1, 0.1);
+        float m2 = metaball(uv, center2, 0.08);
+        float m3 = metaball(uv, center3, 0.09);
+        float m4 = metaball(uv, center4, 0.07);
+
+        // メタボールの値を合成
+        float metaballValue = m1 + m2 + m3 + m4;
+
+        // しきい値でメタボールの形状を定義
+        float threshold = smoothstep(0.8, 2.0, metaballValue);
+
+        // メタボールの色を設定
+        vec3 baseColor = vec3(0.3, 0.6, 1.0);  // 基本色（青みがかった色）
+        vec3 glowColor = vec3(0.8, 0.9, 1.0);  // 光る部分の色
+
+        // メタボールの内側と外側の色を補間
+        vec3 finalColor = mix(
+            baseColor,
+            glowColor,
+            smoothstep(0.8, 2.0, metaballValue)
+        );
+
+        // 色の強度を調整
+        finalColor = mix(vec3(0.0), finalColor, uColorIntensity);
+
+        // 最終的な色を出力
+        gl_FragColor = vec4(finalColor * threshold, threshold);
     }
 `;
